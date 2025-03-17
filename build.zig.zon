@@ -1,0 +1,16 @@
+.{
+    .name = .zig_yaml_cpp,
+    .version = "0.2.0",
+    .fingerprint = 0xd052bf8c1ef32406,
+    .minimum_zig_version = "0.14.0",
+    .dependencies = .{
+        .yaml_cpp = .{
+            .url = "https://github.com/jbeder/yaml-cpp/archive/28f93bdec6387d42332220afa9558060c8016795.tar.gz",
+            .hash = "N-V-__8AAINuTwCbLUq0kLWCq4pLjkY-VO8CdWDtyZJrkl6j",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+    },
+}
