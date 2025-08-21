@@ -2,24 +2,20 @@ const std = @import("std");
 const Build = std.Build;
 
 pub fn build(b: *std.Build) !void {
-    // Standard target options allows the person running `zig build` to choose
-    // what target to build for. Here we do not override the defaults, which
-    // means any target is allowed, and the default is native. Other options
-    // for restricting supported target set are available.
     const target = b.standardTargetOptions(.{});
-
-    // Standard optimize options allows the user to choose the optimization mode
-    // when running 'zig build'.  This applies to downstream consumers of this package
-    // as well, e.g. when added as a dependency in build.zig.zon.
-    // Default to Debug, but allow the user to specify ReleaseSafe or ReleaseFast builds
     const optimize = b.standardOptimizeOption(.{});
-
-    // Specify the default library linkage mode
     const linkage = b.option(std.builtin.LinkMode, "linkage", "static or dynamic linkage") orelse .static;
 
     // Additional build configuration options
     const build_contrib = b.option(bool, "build-contrib", "Enable yaml-cpp contrib in library") orelse true;
-    const build_tools = b.option(bool, "build-tools", "Enable parse tools") orelse true;
+    const build_tools = b.option(bool, "build-tools", "Enable parse tools") orelse false;
+
+    const std_module_opts: std.Build.Module.CreateOptions = .{
+        .target = target,
+        .optimize = optimize,
+        .pic = true,
+        .link_libcpp = true,
+    };
 
     // Upstream yaml-cpp library
     const upstream = b.dependency("yaml_cpp", .{
@@ -29,11 +25,7 @@ pub fn build(b: *std.Build) !void {
     });
 
     // Export the yaml-cpp module to downstream consumers
-    const mod = b.addModule("yaml-cpp", .{
-        .target = target,
-        .optimize = optimize,
-        .link_libcpp = true,
-    });
+    const mod = b.addModule("yaml-cpp", std_module_opts);
     mod.addIncludePath(upstream.path("include/"));
     mod.addIncludePath(upstream.path("src/"));
     mod.addCSourceFiles(.{
@@ -70,7 +62,7 @@ pub fn build(b: *std.Build) !void {
             "stream.cpp",
             "tag.cpp",
         },
-        // .flags = &.{"-std=c++11"},
+        .flags = &.{ "-std=c++17", "-fPIC" },
     });
 
     if (build_contrib) {
@@ -101,11 +93,7 @@ pub fn build(b: *std.Build) !void {
     if (build_tools) {
         const sandbox = b.addExecutable(.{
             .name = "yaml-cpp-sandbox",
-            .target = target,
-            .optimize = optimize,
-            // We could specify the linkage here, but it's target dependent
-            // (Builing for GNU libC requires dynamic, while MUSL will use static)
-            // So, just let the compiler figure it out.
+            .root_module = b.createModule(std_module_opts),
         });
         sandbox.addCSourceFiles(.{ .root = upstream.path("util"), .files = &.{"sandbox.cpp"} });
         sandbox.linkLibrary(lib);
@@ -113,8 +101,7 @@ pub fn build(b: *std.Build) !void {
 
         const parse = b.addExecutable(.{
             .name = "yaml-cpp-parse",
-            .target = target,
-            .optimize = optimize,
+            .root_module = b.createModule(std_module_opts),
         });
         parse.addCSourceFiles(.{ .root = upstream.path("util"), .files = &.{"parse.cpp"} });
         parse.linkLibrary(lib);
@@ -122,8 +109,7 @@ pub fn build(b: *std.Build) !void {
 
         const read = b.addExecutable(.{
             .name = "yaml-cpp-read",
-            .target = target,
-            .optimize = optimize,
+            .root_module = b.createModule(std_module_opts),
         });
         read.addCSourceFiles(.{ .root = upstream.path("util"), .files = &.{"read.cpp"} });
         read.linkLibrary(lib);
