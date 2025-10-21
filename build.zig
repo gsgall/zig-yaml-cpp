@@ -26,6 +26,11 @@ pub fn build(b: *std.Build) !void {
 
     // Export the yaml-cpp module to downstream consumers
     const mod = b.addModule("yaml-cpp", std_module_opts);
+
+    if (linkage == std.builtin.LinkMode.static) {
+        mod.addCMacro("YAML_CPP_STATIC_DEFINE", "");
+    }
+
     mod.addIncludePath(upstream.path("include/"));
     mod.addIncludePath(upstream.path("src/"));
     mod.addCSourceFiles(.{
