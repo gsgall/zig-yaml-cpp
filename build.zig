@@ -4,7 +4,7 @@ const Build = std.Build;
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    const linkage = b.option(std.builtin.LinkMode, "linkage", "static or dynamic linkage") orelse .dynamic;
+    const linkage = b.option(std.builtin.LinkMode, "linkage", "static or dynamic linkage") orelse .static;
 
     // Additional build configuration options
     const build_contrib = b.option(bool, "build-contrib", "Enable yaml-cpp contrib in library") orelse true;
@@ -62,7 +62,7 @@ pub fn build(b: *std.Build) !void {
             "stream.cpp",
             "tag.cpp",
         },
-        .flags = &.{ "-std=c++17", "-fPIC" },
+        .flags = &.{"-std=c++17"},
     });
 
     if (build_contrib) {
